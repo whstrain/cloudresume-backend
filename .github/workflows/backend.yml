@@ -44,7 +44,7 @@ jobs:
       - name: Deploy to Azure Functions
         run: |
           pip install --target="./.python_packages/lib/site-packages" -r requirements.txt
-          func azure functionapp publish func-cloud-resume-test-001 --no-build
+          func azure functionapp publish func-cloud-resume-test-001 --no-build --python
 
       - name: Deploy to Azure Functions
         run: |
