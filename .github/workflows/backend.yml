@@ -37,6 +37,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Install Azure Functions Core Tools
+        run: |
+          npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+      - name: Deploy to Azure Functions
+        run: |
+          pip install --target="./.python_packages/lib/site-packages" -r requirements.txt
+          func azure functionapp publish func-cloud-resume-test-001 --no-build
+
       - name: Deploy to Azure Functions
         run: |
           pip install --target="./.python_packages/lib/site-packages" -r requirements.txt
