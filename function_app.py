@@ -20,7 +20,7 @@ def GetVisitorCount(req: func.HttpRequest) -> func.HttpResponse:
 
         # Get the current count
         entity = table.get_entity(partition_key="1", row_key="1")
-        count = int(entity["counter"]) + 1
+        count = int(entity["counter"]) + 5
 
         # Update the count
         entity["counter"] = count
