@@ -1,0 +1,113 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "16234746507309270761"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "southcentralus",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "cosmosLocation": {
+      "type": "string",
+      "defaultValue": "centralus",
+      "metadata": {
+        "description": "Location for CosmosDB (not available in South Central US)"
+      }
+    },
+    "baseName": {
+      "type": "string",
+      "defaultValue": "cloudresumetest001",
+      "metadata": {
+        "description": "Base name for all resources"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[format('st{0}', parameters('baseName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2"
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[format('cosmos-{0}', parameters('baseName'))]",
+      "location": "[parameters('cosmosLocation')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[parameters('cosmosLocation')]",
+            "failoverPriority": 0
+          }
+        ],
+        "capabilities": [
+          {
+            "name": "EnableTable"
+          },
+          {
+            "name": "EnableServerless"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/tables",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', format('cosmos-{0}', parameters('baseName')), 'counter')]",
+      "properties": {
+        "resource": {
+          "id": "counter"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('baseName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[format('func-{0}', parameters('baseName'))]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp,linux",
+      "properties": {
+        "siteConfig": {
+          "pythonVersion": "3.13",
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', format('st{0}', parameters('baseName')), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', format('st{0}', parameters('baseName'))), '2023-01-01').keys[0].value)]"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "python"
+            },
+            {
+              "name": "COSMOS_CONNECTION_STRING",
+              "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('baseName'))), '2023-04-15').connectionStrings[0].connectionString]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('cosmos-{0}', parameters('baseName')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('st{0}', parameters('baseName')))]"
+      ]
+    }
+  ]
+}
