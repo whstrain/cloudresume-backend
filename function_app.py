@@ -1,5 +1,3 @@
-#CI/CD test
-
 import azure.functions as func
 import logging
 from azure.data.tables import TableServiceClient
